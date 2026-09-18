@@ -23,7 +23,7 @@ namespace programmeerimine2
 
         public PaaridForm()
         {
-            Text = "matching game";
+            Text = "paarid mäng";
             Size = new Size(450, 470);
 
             for (int i = 0; i < 4; i++)
