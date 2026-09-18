@@ -23,8 +23,16 @@ namespace programmeerimine2
 
         public PaaridForm()
         {
-            Text = "paarid mäng";
-            Size = new Size(450, 470);
+            Text = "matching game";
+            Size = new Size(450, 510);
+
+            var nuppUus = new Button
+            {
+                Text = "uus mäng",
+                Dock = DockStyle.Bottom,
+                Height = 40
+            };
+            nuppUus.Click += (s, e) => UusMäng();
 
             for (int i = 0; i < 4; i++)
             {
@@ -48,7 +56,17 @@ namespace programmeerimine2
 
             taimer.Tick += TaimerTiksub;
             SeaSümbolid();
+
             Controls.Add(tabel);
+            Controls.Add(nuppUus);
+        }
+
+        private void UusMäng()
+        {
+            taimer.Stop();
+            esimene = null;
+            teine = null;
+            SeaSümbolid();
         }
 
         private void SeaSümbolid()
