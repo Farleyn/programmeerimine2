@@ -8,127 +8,251 @@ namespace programmeerimine2
 {
     public partial class PaaridForm : Form
     {
-        private TableLayoutPanel tabel = new TableLayoutPanel
+        private readonly Label käigudSilt = new Label();
+        private readonly Label paaridSilt = new Label();
+
+        private readonly Button vihje = new Button();
+        private readonly Button nuppUus = new Button();
+
+        private readonly Timer taimer = new Timer();
+        private readonly Timer vihjeTaimer = new Timer();
+
+        private readonly Random rand = new Random();
+
+        private readonly string[] märgid =
         {
-            Dock = DockStyle.Fill,
-            ColumnCount = 4,
-            RowCount = 4,
-            BackColor = Color.White,
-            Padding = new Padding(2)
+            "🍎", "🍎",
+            "🍌", "🍌",
+            "🍒", "🍒",
+            "🍋", "🍋",
+            "🍉", "🍉",
+            "⭐", "⭐",
+            "❤️", "❤️",
+            "🐱", "🐱"
         };
-        private Label esimene = null, teine = null;
-        private Timer taimer = new Timer { Interval = 750 };
-        private Random rand = new Random();
-        private List<string> märgid = new List<string> { "!", "!", "N", "N", ",", ",", "k", "k", "b", "b", "v", "v", "w", "w", "z", "z" };
+
+        private readonly Label[] ruudud = new Label[16];
+
+        private Label esimene;
+        private Label teine;
+        private Label vihjeÜks;
+        private Label vihjeKaks;
+
+        private int käigud;
+        private int leitudPaarid;
 
         public PaaridForm()
         {
-            Text = "matching game";
-            Size = new Size(450, 510);
+            InitializeComponent();
 
-            var nuppUus = new Button
-            {
-                Text = "uus mäng",
-                Dock = DockStyle.Bottom,
-                Height = 40
-            };
-            nuppUus.Click += (s, e) => UusMäng();
+            Text = "Paarid";
+            ClientSize = new Size(440, 485);
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
 
-            for (int i = 0; i < 4; i++)
-            {
-                tabel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-                tabel.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            }
+            käigudSilt.Text = "Käigud: 0";
+            käigudSilt.Location = new Point(15, 15);
+            käigudSilt.Size = new Size(90, 25);
+
+            paaridSilt.Text = "Paarid: 0/8";
+            paaridSilt.Location = new Point(110, 15);
+            paaridSilt.Size = new Size(100, 25);
+
+            vihje.Text = "Vihje";
+            vihje.Location = new Point(255, 10);
+            vihje.Size = new Size(80, 30);
+
+            nuppUus.Text = "Uus mäng";
+            nuppUus.Location = new Point(340, 10);
+            nuppUus.Size = new Size(100, 30);
 
             for (int i = 0; i < 16; i++)
             {
-                var sümbol = new Label
+                int rida = i / 4;
+                int veerg = i % 4;
+
+                var ruut = new Label
                 {
-                    Dock = DockStyle.Fill,
+                    Location = new Point(15 + veerg * 105, 55 + rida * 105),
+                    Size = new Size(95, 95),
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Font = new Font("Webdings", 36, FontStyle.Bold),
-                    BackColor = Color.CornflowerBlue,
-                    Margin = new Padding(1)
+                    Font = new Font("Segoe UI Emoji", 28, FontStyle.Regular),
+                    BorderStyle = BorderStyle.FixedSingle,
+                    BackColor = SystemColors.Control,
+                    ForeColor = SystemColors.Control,
+                    Cursor = Cursors.Hand
                 };
-                sümbol.Click += RuutKlõps;
-                tabel.Controls.Add(sümbol);
+
+                ruut.Click += RuutKlõps;
+
+                ruudud[i] = ruut;
+
+                Controls.Add(ruut);
             }
 
-            taimer.Tick += TaimerTiksub;
-            SeaSümbolid();
-
-            Controls.Add(tabel);
+            Controls.Add(käigudSilt);
+            Controls.Add(paaridSilt);
+            Controls.Add(vihje);
             Controls.Add(nuppUus);
+
+            taimer.Interval = 750;
+            taimer.Tick += TaimerTiksub;
+
+            vihjeTaimer.Interval = 1000;
+            vihjeTaimer.Tick += PeidaVihje;
+
+            nuppUus.Click += (s, e) => UusMäng();
+            vihje.Click += (s, e) => NäitaVihjet();
+
+            UusMäng();
         }
 
         private void UusMäng()
         {
             taimer.Stop();
+            vihjeTaimer.Stop();
+
             esimene = null;
             teine = null;
-            SeaSümbolid();
-        }
+            vihjeÜks = null;
+            vihjeKaks = null;
 
-        private void SeaSümbolid()
-        {
-            var kopeeritud = new List<string>(märgid);
-            foreach (Control c in tabel.Controls)
+            käigud = 0;
+            leitudPaarid = 0;
+
+            käigudSilt.Text = "Käigud: 0";
+            paaridSilt.Text = "Paarid: 0/8";
+
+            var segatud = new List<string>(märgid);
+
+            foreach (Label ruut in ruudud)
             {
-                if (c is Label l && kopeeritud.Count > 0)
-                {
-                    int idx = rand.Next(kopeeritud.Count);
-                    l.Text = kopeeritud[idx];
-                    l.ForeColor = l.BackColor;
-                    kopeeritud.RemoveAt(idx);
-                }
+                int indeks = rand.Next(segatud.Count);
+
+                ruut.Text = segatud[indeks];
+                ruut.ForeColor = ruut.BackColor;
+                ruut.Enabled = true;
+
+                segatud.RemoveAt(indeks);
             }
         }
 
         private void RuutKlõps(object sender, EventArgs e)
         {
-            if (taimer.Enabled) return;
-            if (sender is Label l && l.ForeColor == Color.Black) return;
+            if (taimer.Enabled || vihjeTaimer.Enabled)
+                return;
 
-            if (sender is Label klõpsatud)
+            if (sender is not Label ruut)
+                return;
+
+            if (!ruut.Enabled)
+                return;
+
+            if (esimene == ruut)
+                return;
+
+            ruut.ForeColor = Color.Black;
+
+            if (esimene == null)
             {
-                if (esimene == null)
-                {
-                    esimene = klõpsatud;
-                    esimene.ForeColor = Color.Black;
-                    return;
-                }
-
-                teine = klõpsatud;
-                teine.ForeColor = Color.Black;
-
-                KontrolliVõitu();
-
-                if (esimene.Text == teine.Text)
-                {
-                    esimene = null;
-                    teine = null;
-                    return;
-                }
-
-                taimer.Start();
+                esimene = ruut;
+                return;
             }
+
+            teine = ruut;
+
+            käigud++;
+            käigudSilt.Text = $"Käigud: {käigud}";
+
+            if (esimene.Text == teine.Text)
+            {
+                esimene.Enabled = false;
+                teine.Enabled = false;
+
+                leitudPaarid++;
+                paaridSilt.Text = $"Paarid: {leitudPaarid}/8";
+
+                esimene = null;
+                teine = null;
+
+                if (leitudPaarid == 8)
+                    MessageBox.Show($"Võit! Käike: {käigud}", "Paarid");
+
+                return;
+            }
+
+            taimer.Start();
         }
 
         private void TaimerTiksub(object sender, EventArgs e)
         {
             taimer.Stop();
-            esimene.ForeColor = esimene.BackColor;
-            teine.ForeColor = teine.BackColor;
+
+            if (esimene != null)
+                esimene.ForeColor = esimene.BackColor;
+
+            if (teine != null)
+                teine.ForeColor = teine.BackColor;
+
             esimene = null;
             teine = null;
         }
 
-        private void KontrolliVõitu()
+        private void NäitaVihjet()
         {
-            foreach (Control c in tabel.Controls)
-                if (c is Label l && l.ForeColor == l.BackColor) return;
+            if (taimer.Enabled || vihjeTaimer.Enabled)
+                return;
 
-            MessageBox.Show("võit!");
+            Label leitud1 = null;
+            Label leitud2 = null;
+
+            for (int i = 0; i < ruudud.Length; i++)
+            {
+                if (!ruudud[i].Enabled)
+                    continue;
+
+                for (int j = i + 1; j < ruudud.Length; j++)
+                {
+                    if (!ruudud[j].Enabled)
+                        continue;
+
+                    if (ruudud[i].Text == ruudud[j].Text)
+                    {
+                        leitud1 = ruudud[i];
+                        leitud2 = ruudud[j];
+                        break;
+                    }
+                }
+
+                if (leitud1 != null)
+                    break;
+            }
+
+            if (leitud1 == null)
+                return;
+
+            vihjeÜks = leitud1;
+            vihjeKaks = leitud2;
+
+            vihjeÜks.ForeColor = Color.Black;
+            vihjeKaks.ForeColor = Color.Black;
+
+            vihjeTaimer.Start();
+        }
+
+        private void PeidaVihje(object sender, EventArgs e)
+        {
+            vihjeTaimer.Stop();
+
+            if (vihjeÜks != null && vihjeÜks.Enabled)
+                vihjeÜks.ForeColor = vihjeÜks.BackColor;
+
+            if (vihjeKaks != null && vihjeKaks.Enabled)
+                vihjeKaks.ForeColor = vihjeKaks.BackColor;
+
+            vihjeÜks = null;
+            vihjeKaks = null;
         }
     }
 }

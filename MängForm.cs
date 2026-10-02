@@ -7,76 +7,200 @@ namespace programmeerimine2
 {
     public partial class MängForm : Form
     {
-        private ComboBox raskus = new ComboBox { Location = new Point(20, 10), Width = 90, DropDownStyle = ComboBoxStyle.DropDownList };
-        private Label aegSilt = new Label { Text = "aeg: 30", Location = new Point(180, 13), AutoSize = true };
-        private Label l1 = new Label { Location = new Point(20, 45), AutoSize = true }, l2 = new Label { Location = new Point(20, 75), AutoSize = true };
-        private Label l3 = new Label { Location = new Point(20, 105), AutoSize = true }, l4 = new Label { Location = new Point(20, 135), AutoSize = true };
-        private NumericUpDown n1 = new NumericUpDown { Location = new Point(180, 43), Width = 80, Maximum = 1000, Enabled = false };
-        private NumericUpDown n2 = new NumericUpDown { Location = new Point(180, 73), Width = 80, Maximum = 1000, Enabled = false };
-        private NumericUpDown n3 = new NumericUpDown { Location = new Point(180, 103), Width = 80, Maximum = 1000, Enabled = false };
-        private NumericUpDown n4 = new NumericUpDown { Location = new Point(180, 133), Width = 80, Maximum = 1000, Enabled = false };
-        private Button alusta = new Button { Text = "alusta", Location = new Point(80, 175), Size = new Size(120, 30) };
-        private Timer taimer = new Timer { Interval = 1000 };
+        private readonly ComboBox raskus = new ComboBox();
+        private readonly Label aegSilt = new Label();
+        private readonly Label skoorSilt = new Label();
 
-        private int aeg, v1, v2, v3, v4;
-        private Random rand = new Random();
+        private readonly Label[] küsimused = new Label[4];
+        private readonly NumericUpDown[] vastused = new NumericUpDown[4];
+
+        private readonly Button kontrolli = new Button();
+        private readonly Button alusta = new Button();
+
+        private readonly Timer taimer = new Timer();
+        private readonly Random rand = new Random();
+
+        private readonly int[] õiged = new int[4];
+
+        private int aeg;
+        private int skoor;
 
         public MängForm()
         {
-            Text = "matemaatika";
-            Size = new Size(300, 260);
+            InitializeComponent();
 
-            raskus.Items.AddRange(new object[] { "lihtne", "raske" });
+            Text = "Matemaatika";
+            ClientSize = new Size(430, 340);
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+
+            var seaded = new GroupBox
+            {
+                Text = "Seaded",
+                Location = new Point(15, 15),
+                Size = new Size(400, 70)
+            };
+
+            var raskusSilt = new Label
+            {
+                Text = "Raskus:",
+                Location = new Point(20, 27),
+                AutoSize = true
+            };
+
+            raskus.Location = new Point(75, 23);
+            raskus.Size = new Size(100, 25);
+            raskus.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            skoorSilt.Text = "Tulemus: 0";
+            skoorSilt.Location = new Point(200, 27);
+            skoorSilt.Size = new Size(90, 20);
+
+            aegSilt.Text = "Aeg: 30";
+            aegSilt.Location = new Point(300, 27);
+            aegSilt.Size = new Size(70, 20);
+
+            seaded.Controls.Add(raskusSilt);
+            seaded.Controls.Add(raskus);
+            seaded.Controls.Add(skoorSilt);
+            seaded.Controls.Add(aegSilt);
+
+            var ülesanded = new GroupBox
+            {
+                Text = "Ülesanded",
+                Location = new Point(15, 95),
+                Size = new Size(400, 175)
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                küsimused[i] = new Label
+                {
+                    Location = new Point(25, 30 + i * 32),
+                    Size = new Size(150, 25)
+                };
+
+                vastused[i] = new NumericUpDown
+                {
+                    Location = new Point(220, 27 + i * 32),
+                    Size = new Size(100, 25),
+                    Maximum = 1000,
+                    Enabled = false
+                };
+
+                ülesanded.Controls.Add(küsimused[i]);
+                ülesanded.Controls.Add(vastused[i]);
+            }
+
+            kontrolli.Text = "Kontrolli";
+            kontrolli.Location = new Point(120, 285);
+            kontrolli.Size = new Size(100, 35);
+            kontrolli.Enabled = false;
+
+            alusta.Text = "Uus mäng";
+            alusta.Location = new Point(230, 285);
+            alusta.Size = new Size(100, 35);
+
+            raskus.Items.Add("Lihtne");
+            raskus.Items.Add("Raske");
             raskus.SelectedIndex = 0;
 
             alusta.Click += (s, e) => AlustaMängu();
+            kontrolli.Click += (s, e) => KontrolliVastused();
+
+            taimer.Interval = 1000;
             taimer.Tick += TaimerTiksub;
 
-            Controls.AddRange(new Control[] { raskus, aegSilt, l1, n1, l2, n2, l3, n3, l4, n4, alusta });
+            Controls.Add(seaded);
+            Controls.Add(ülesanded);
+            Controls.Add(kontrolli);
+            Controls.Add(alusta);
         }
 
         private void AlustaMängu()
         {
-            bool onRaske = raskus.SelectedIndex == 1;
-            int max = onRaske ? 50 : 20;
-            int maxM = onRaske ? 15 : 10;
+            bool raske = raskus.SelectedIndex == 1;
 
-            int a = rand.Next(1, max), b = rand.Next(1, max);
-            v1 = a + b; l1.Text = $"{a} + {b} ="; n1.Value = 0; n1.Enabled = true;
+            int max = raske ? 50 : 20;
+            int maxM = raske ? 15 : 10;
 
-            a = rand.Next(max / 2, max); b = rand.Next(1, a);
-            v2 = a - b; l2.Text = $"{a} - {b} ="; n2.Value = 0; n2.Enabled = true;
+            int a = rand.Next(1, max);
+            int b = rand.Next(1, max);
 
-            a = rand.Next(2, maxM); b = rand.Next(2, maxM);
-            v3 = a * b; l3.Text = $"{a} * {b} ="; n3.Value = 0; n3.Enabled = true;
+            õiged[0] = a + b;
+            küsimused[0].Text = $"{a} + {b} =";
 
-            b = rand.Next(2, maxM); a = b * rand.Next(2, maxM);
-            v4 = a / b; l4.Text = $"{a} / {b} ="; n4.Value = 0; n4.Enabled = true;
+            a = rand.Next(Math.Max(2, max / 2), max);
+            b = rand.Next(1, a);
 
-            aeg = onRaske ? 20 : 30;
-            aegSilt.Text = $"aeg: {aeg}";
+            õiged[1] = a - b;
+            küsimused[1].Text = $"{a} - {b} =";
+
+            a = rand.Next(2, maxM);
+            b = rand.Next(2, maxM);
+
+            õiged[2] = a * b;
+            küsimused[2].Text = $"{a} * {b} =";
+
+            b = rand.Next(2, maxM);
+            a = b * rand.Next(2, maxM);
+
+            õiged[3] = a / b;
+            küsimused[3].Text = $"{a} / {b} =";
+
+            for (int i = 0; i < 4; i++)
+            {
+                vastused[i].Value = 0;
+                vastused[i].Enabled = true;
+            }
+
+            aeg = raske ? 20 : 30;
+            aegSilt.Text = $"Aeg: {aeg}";
+
+            kontrolli.Enabled = true;
             alusta.Enabled = false;
             raskus.Enabled = false;
+
             taimer.Start();
+
+            vastused[0].Focus();
+        }
+
+        private void KontrolliVastused()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (vastused[i].Value != õiged[i])
+                {
+                    MessageBox.Show("Mõni vastus on vale.", "Matemaatika");
+                    vastused[i].Focus();
+                    return;
+                }
+            }
+
+            skoor++;
+            skoorSilt.Text = $"Tulemus: {skoor}";
+
+            taimer.Stop();
+
+            MessageBox.Show("Võit!", "Matemaatika");
+
+            LõpetaMäng();
         }
 
         private void TaimerTiksub(object sender, EventArgs e)
         {
-            if (n1.Value == v1 && n2.Value == v2 && n3.Value == v3 && n4.Value == v4)
+            aeg--;
+
+            aegSilt.Text = $"Aeg: {aeg}";
+
+            if (aeg <= 0)
             {
                 taimer.Stop();
-                MessageBox.Show("võit!");
-                LõpetaMäng();
-            }
-            else if (aeg > 0)
-            {
-                aeg--;
-                aegSilt.Text = $"aeg: {aeg}";
-            }
-            else
-            {
-                taimer.Stop();
-                MessageBox.Show("aeg läbi!");
+
+                MessageBox.Show("Aeg läbi!", "Matemaatika");
+
                 LõpetaMäng();
             }
         }
@@ -85,10 +209,10 @@ namespace programmeerimine2
         {
             alusta.Enabled = true;
             raskus.Enabled = true;
-            n1.Enabled = false;
-            n2.Enabled = false;
-            n3.Enabled = false;
-            n4.Enabled = false;
+            kontrolli.Enabled = false;
+
+            for (int i = 0; i < 4; i++)
+                vastused[i].Enabled = false;
         }
     }
 }

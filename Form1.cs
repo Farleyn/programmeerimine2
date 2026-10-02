@@ -9,20 +9,50 @@ namespace programmeerimine2
         public Form1()
         {
             InitializeComponent();
-            Text = "menüü";
-            Size = new Size(300, 220);
+
+            Text = "Menüü";
+            ClientSize = new Size(400, 260);
             StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
 
-            var silt = new Label { Text = "vali:", Location = new Point(20, 10), AutoSize = true };
-            var nupp1 = new Button { Text = "1. pildid", Location = new Point(20, 35), Size = new Size(240, 35) };
-            var nupp2 = new Button { Text = "2. matemaatika", Location = new Point(20, 75), Size = new Size(240, 35) };
-            var nupp3 = new Button { Text = "3. paarid", Location = new Point(20, 115), Size = new Size(240, 35) };
+            var group = new GroupBox
+            {
+                Text = "Vali mäng",
+                Location = new Point(20, 20),
+                Size = new Size(360, 220)
+            };
 
-            nupp1.Click += (s, e) => new PildidForm().ShowDialog();
-            nupp2.Click += (s, e) => new MängForm().ShowDialog();
-            nupp3.Click += (s, e) => new PaaridForm().ShowDialog();
+            var nupp1 = new Button
+            {
+                Text = "1. Pildid",
+                Location = new Point(35, 40),
+                Size = new Size(290, 40)
+            };
 
-            Controls.AddRange(new Control[] { silt, nupp1, nupp2, nupp3 });
+            var nupp2 = new Button
+            {
+                Text = "2. Matemaatika",
+                Location = new Point(35, 90),
+                Size = new Size(290, 40)
+            };
+
+            var nupp3 = new Button
+            {
+                Text = "3. Paarid",
+                Location = new Point(35, 140),
+                Size = new Size(290, 40)
+            };
+
+            nupp1.Click += (s, e) => new PildidForm().ShowDialog(this);
+            nupp2.Click += (s, e) => new MängForm().ShowDialog(this);
+            nupp3.Click += (s, e) => new PaaridForm().ShowDialog(this);
+
+            group.Controls.Add(nupp1);
+            group.Controls.Add(nupp2);
+            group.Controls.Add(nupp3);
+
+            Controls.Add(group);
         }
     }
 }
